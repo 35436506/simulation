@@ -563,11 +563,42 @@ if MODULE == "theory":
 
     col1, col2 = st.columns(2)
     with col1:
-        st.markdown('<div class="formula-box">CI = x̄ ± t*(s/√n)<div class="formula-desc">Khoảng tin cậy cho mean thực  ·  t* = t critical (df = n−1)</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="formula-box">n = (z* · σ / E)²<div class="formula-desc">Số replications cần thiết để đạt sai số ±E</div></div>', unsafe_allow_html=True)
+        st.markdown('''<div class="formula-box">
+CI &nbsp;=&nbsp; <span style="text-decoration:overline;font-style:normal">x</span> &nbsp;&plusmn;&nbsp; t* &middot; (s &frasl; &radic;n)
+<div class="formula-desc">
+  Khoảng tin cậy (Confidence Interval) ước lượng giá trị trung bình thực của Y<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da"><span style="text-decoration:overline">x</span></b> = trung bình của n kết quả mô phỏng<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">t*</b> = hệ số t-critical (tra bảng t theo df = n−1 và mức tin cậy)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">s</b> = độ lệch chuẩn mẫu (đo mức độ phân tán kết quả)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">n</b> = số lần lặp mô phỏng (replications)
+</div></div>''', unsafe_allow_html=True)
+        st.markdown('''<div class="formula-box">
+n &nbsp;=&nbsp; (z* &middot; &sigma; &frasl; E)&sup2;
+<div class="formula-desc">
+  Số lần lặp tối thiểu để đạt độ chính xác mong muốn<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">z*</b> = hệ số z (1.645 cho 90%, 1.96 cho 95%, 2.576 cho 99%)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">&sigma;</b> = độ lệch chuẩn ước tính (chạy thử ~100 lần để có)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">E</b> = sai số tối đa chấp nhận được (&plusmn;E)
+</div></div>''', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="formula-box">P(Y ≤ T) = #{Y ≤ T} / n<div class="formula-desc">Xác suất kết quả không vượt ngưỡng T  (≡ CDF Target)</div></div>', unsafe_allow_html=True)
-        st.markdown('<div class="formula-box">VaR: P(Y > T) ≤ α<div class="formula-desc">Value at Risk constraint  ·  α thường = 5% hoặc 2.5%</div></div>', unsafe_allow_html=True)
+        st.markdown('''<div class="formula-box">
+P(Y &le; T) &nbsp;=&nbsp; #{Y &le; T} &frasl; n
+<div class="formula-desc">
+  Xác suất kết quả không vượt ngưỡng T — đọc trực tiếp từ CDF<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">Y</b> = biến đầu ra (lợi nhuận, chi phí, doanh thu…)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">T</b> = ngưỡng cần kiểm tra (ví dụ: $39M, 0, breakeven…)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">#{Y &le; T}</b> = đếm số lần Y nhỏ hơn hoặc bằng T<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">n</b> = tổng số lần lặp → chia ra được xác suất
+</div></div>''', unsafe_allow_html=True)
+        st.markdown('''<div class="formula-box">
+VaR:&nbsp; P(Y &gt; T) &nbsp;&le;&nbsp; &alpha;
+<div class="formula-desc">
+  Value at Risk — giới hạn xác suất xảy ra kết quả xấu<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">Y</b> = kết quả mô phỏng<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">T</b> = ngưỡng rủi ro (ví dụ: lỗ $1M, chi phí vượt $40M)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">&alpha;</b> = mức rủi ro tối đa chấp nhận (thường 5% hoặc 2.5%)<br>
+  &nbsp;&bull;&nbsp;Ý nghĩa: xác suất kết quả tệ hơn T không được vượt &alpha;
+</div></div>''', unsafe_allow_html=True)
 
     st.markdown("""
     <div class="info-box">
