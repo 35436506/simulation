@@ -1,5 +1,5 @@
 """
-Monte Carlo Simulation App  ·  Chapter 12 — Analytic Solver style
+Monte Carlo Simulation App
 Inspired by forecasting_app.py design language (navy/teal/gold palette, dark charts).
 Deploy: streamlit run simulation_app.py
 """
@@ -34,8 +34,8 @@ PINK   = "#e85c8a"   # pink accent
 # PAGE CONFIG & CSS
 # ══════════════════════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title="📊 Simulation Analyst",
-    page_icon="📊",
+    page_title="Simulation Analyst",
+    page_icon="🔷",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -395,10 +395,80 @@ def plot_tornado(data_dict, title, output_label, n_sims=2000, seed=99):
 # ══════════════════════════════════════════════════════════════════════════════
 # HERO HEADER
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown('<div class="hero-title">📊 Simulation Analyst</div>', unsafe_allow_html=True)
+st.markdown("""
+<div style="display:flex; align-items:center; gap:18px; margin-bottom:.2rem; margin-top:.4rem;">
+
+  <!-- Octagon SVG logo -->
+  <svg width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="octGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%"   stop-color="#e63946"/>
+        <stop offset="16%"  stop-color="#f4a261"/>
+        <stop offset="33%"  stop-color="#f7c948"/>
+        <stop offset="50%"  stop-color="#43aa8b"/>
+        <stop offset="66%"  stop-color="#4895ef"/>
+        <stop offset="83%"  stop-color="#7b5ea7"/>
+        <stop offset="100%" stop-color="#e63946"/>
+      </linearGradient>
+      <linearGradient id="innerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%"   stop-color="#0d1b2a"/>
+        <stop offset="100%" stop-color="#1b2838"/>
+      </linearGradient>
+      <linearGradient id="chartGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+        <stop offset="0%"   stop-color="#4895ef" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="#4895ef" stop-opacity="0.9"/>
+      </linearGradient>
+      <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%"   stop-color="#f7c948"/>
+        <stop offset="100%" stop-color="#e63946"/>
+      </linearGradient>
+    </defs>
+    <!-- Octagon border (stroke gradient via thick stroke) -->
+    <polygon
+      points="22,4 50,4 68,22 68,50 50,68 22,68 4,50 4,22"
+      fill="url(#innerGrad)"
+      stroke="url(#octGrad)"
+      stroke-width="3.5"
+    />
+    <!-- Mini bar chart inside -->
+    <rect x="13" y="42" width="7"  height="16" rx="1.5" fill="url(#chartGrad)" opacity=".85"/>
+    <rect x="23" y="34" width="7"  height="24" rx="1.5" fill="url(#chartGrad)" opacity=".85"/>
+    <rect x="33" y="26" width="7"  height="32" rx="1.5" fill="url(#chartGrad)" opacity=".85"/>
+    <rect x="43" y="30" width="7"  height="28" rx="1.5" fill="url(#chartGrad)" opacity=".85"/>
+    <rect x="53" y="20" width="7"  height="38" rx="1.5" fill="url(#chartGrad)" opacity=".85"/>
+    <!-- Trend line -->
+    <polyline
+      points="16,42 26,34 36,26 46,30 56,20"
+      fill="none" stroke="url(#lineGrad)" stroke-width="2.2"
+      stroke-linecap="round" stroke-linejoin="round"
+    />
+    <!-- Dots on line -->
+    <circle cx="16" cy="42" r="2.2" fill="#f7c948"/>
+    <circle cx="26" cy="34" r="2.2" fill="#43aa8b"/>
+    <circle cx="36" cy="26" r="2.2" fill="#4895ef"/>
+    <circle cx="46" cy="30" r="2.2" fill="#7b5ea7"/>
+    <circle cx="56" cy="20" r="2.2" fill="#e63946"/>
+  </svg>
+
+  <!-- Title -->
+  <div>
+    <div style="
+      font-size:2.2rem; font-weight:800; letter-spacing:-.04em; line-height:1.1;
+      background: linear-gradient(90deg,
+        #e63946 0%, #f4a261 18%, #f7c948 34%,
+        #43aa8b 50%, #4895ef 66%, #7b5ea7 82%, #e63946 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    ">Simulation Analyst</div>
+    <div style="font-size:.9rem; color:#57606a; margin-top:.15rem;">
+      Monte Carlo Simulation
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 st.markdown(
-    '<div class="hero-sub">Monte Carlo Simulation theo phương pháp Analytic Solver (Chapter 12). '
-    'Chọn bài toán từ sidebar → nhập tham số → chạy mô phỏng → đọc phân phối, VaR và khoảng tin cậy.</div>',
+    '<div class="hero-sub">Chọn bài toán từ sidebar → nhập tham số → chạy mô phỏng → đọc phân phối, VaR và khoảng tin cậy.</div>',
     unsafe_allow_html=True,
 )
 
@@ -477,15 +547,15 @@ if MODULE == "theory":
     st.markdown('<div class="section-hdr"><span class="sec-num">③</span> CÁC HÀM RNG (ANALYTIC SOLVER)</div>', unsafe_allow_html=True)
 
     rng_data = {
-        "PsiNormal(μ, σ)":         ["Normal", "Liên tục, đối xứng", "Chi phí, tốc độ tăng trưởng"],
-        "PsiUniform(a, b)":        ["Uniform", "Mọi giá trị trong [a,b]", "Thay đổi % NV, tỷ lệ"],
-        "PsiTriangular(a, c, b)":  ["Triangular", "min / most-likely / max", "Ước tính 3-điểm (PM)"],
-        "PsiDiscrete({v},{p})":    ["Discrete", "Rời rạc, xác suất cho trước", "Nhu cầu, lead time"],
-        "PsiBinomial(n, p)":       ["Binomial", "Số thành công trong n lần", "No-show, tỷ lệ lỗi"],
-        "PsiLognormal(μ, σ)":      ["Lognormal", "Chỉ dương, lệch phải", "Giá tài sản, doanh thu"],
+        "Normal(μ, σ)":         ["Normal", "Liên tục, đối xứng", "Chi phí, tốc độ tăng trưởng"],
+        "Uniform(a, b)":        ["Uniform", "Mọi giá trị trong [a,b]", "Thay đổi % NV, tỷ lệ"],
+        "Triangular(a, c, b)":  ["Triangular", "min / most-likely / max", "Ước tính 3-điểm (PM)"],
+        "Discrete({v},{p})":    ["Discrete", "Rời rạc, xác suất cho trước", "Nhu cầu, lead time"],
+        "Binomial(n, p)":       ["Binomial", "Số thành công trong n lần", "No-show, tỷ lệ lỗi"],
+        "Lognormal(μ, σ)":      ["Lognormal", "Chỉ dương, lệch phải", "Giá tài sản, doanh thu"],
     }
     rng_df = pd.DataFrame(rng_data, index=["Phân phối", "Hình dạng", "Dùng khi"]).T
-    rng_df.index.name = "Hàm (Analytic Solver)"
+    rng_df.index.name = "Hàm phân phối"
     st.dataframe(rng_df, use_container_width=True)
 
     st.divider()
@@ -496,12 +566,12 @@ if MODULE == "theory":
         st.markdown('<div class="formula-box">CI = x̄ ± t*(s/√n)<div class="formula-desc">Khoảng tin cậy cho mean thực  ·  t* = t critical (df = n−1)</div></div>', unsafe_allow_html=True)
         st.markdown('<div class="formula-box">n = (z* · σ / E)²<div class="formula-desc">Số replications cần thiết để đạt sai số ±E</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown('<div class="formula-box">P(Y ≤ T) = #{Y ≤ T} / n<div class="formula-desc">Xác suất kết quả không vượt ngưỡng T  (≡ PsiTarget)</div></div>', unsafe_allow_html=True)
+        st.markdown('<div class="formula-box">P(Y ≤ T) = #{Y ≤ T} / n<div class="formula-desc">Xác suất kết quả không vượt ngưỡng T  (≡ CDF Target)</div></div>', unsafe_allow_html=True)
         st.markdown('<div class="formula-box">VaR: P(Y > T) ≤ α<div class="formula-desc">Value at Risk constraint  ·  α thường = 5% hoặc 2.5%</div></div>', unsafe_allow_html=True)
 
     st.markdown("""
     <div class="info-box">
-    💡 <b>Gợi ý:</b> Chọn các bài toán từ sidebar để xem demo Monte Carlo trực tiếp với dữ liệu từ Chapter 12.
+    💡 <b>Gợi ý:</b> Chọn các bài toán từ sidebar để xem demo Monte Carlo trực tiếp.
     Mỗi bài toán giải thích từng bước và kết quả kèm diễn giải.
     </div>
     """, unsafe_allow_html=True)
@@ -517,8 +587,8 @@ elif MODULE == "health":
     <div class="interpret-box">
     <b>Bài toán:</b> Công ty có 18,533 NV tham gia bảo hiểm. Dự báo <b>tổng chi phí y tế</b> công ty phải bù
     đắp trong 12 tháng tới khi cả số NV lẫn chi phí bồi thường biến động ngẫu nhiên.<br>
-    <b>Biến RNG:</b> Số NV thay đổi theo <code>PsiUniform</code>,
-    chi phí BT/NV tăng theo <code>PsiNormal</code>.
+    <b>Biến RNG:</b> Số NV thay đổi theo <code>Uniform</code>,
+    chi phí BT/NV tăng theo <code>Normal</code>.
     </div>
     """, unsafe_allow_html=True)
 
@@ -537,10 +607,10 @@ elif MODULE == "health":
     with st.expander("📐 Công thức mô hình"):
         st.markdown(f"""
         <div class="formula-box">
-        Nₜ = N₍ₜ₋₁₎ × (1 + PsiUniform({emp_min:.3f}, {emp_max:.3f}))
+        Nₜ = N₍ₜ₋₁₎ × (1 + Uniform({emp_min:.3f}, {emp_max:.3f}))
         <div class="formula-desc">Số nhân viên tháng t</div></div>
         <div class="formula-box">
-        Cₜ = C₍ₜ₋₁₎ × (1 + PsiNormal({c_mean:.3f}, {c_std:.4f}))
+        Cₜ = C₍ₜ₋₁₎ × (1 + Normal({c_mean:.3f}, {c_std:.4f}))
         <div class="formula-desc">Chi phí bồi thường/NV tháng t</div></div>
         <div class="formula-box">
         Company_Cost_t = MAX(0,  Nₜ × Cₜ  −  {contrib} × Nₜ)
@@ -624,8 +694,8 @@ elif MODULE == "airline":
 
     st.markdown("""
     <div class="interpret-box">
-    <b>Bài toán:</b> Máy bay có 19 ghế. Nhu cầu đặt chỗ theo phân phối rời rạc (<code>PsiDiscrete</code>).
-    Xác suất no-show 10% → số khách show-up theo <code>PsiBinomial</code>.
+    <b>Bài toán:</b> Máy bay có 19 ghế. Nhu cầu đặt chỗ theo phân phối rời rạc (<code>Discrete</code>).
+    Xác suất no-show 10% → số khách show-up theo <code>Binomial</code>.
     Tìm số reservations R* tối ưu hoá lợi nhuận kỳ vọng.
     </div>
     """, unsafe_allow_html=True)
@@ -649,7 +719,7 @@ elif MODULE == "airline":
                             "Probability": list(DEFAULT_DEMAND.values())})
         fig_d, ax_d = new_fig(figsize=(8, 2.8))
         ax_d.bar(dd["Demand"], dd["Probability"], color=PURPLE, alpha=0.8, width=0.7)
-        style_ax(ax_d, "Discrete Demand Distribution (PsiDiscrete)", "Demand", "Probability")
+        style_ax(ax_d, "Discrete Demand Distribution (Discrete)", "Demand", "Probability")
         show_fig(fig_d)
 
     if run_btn or "airline_data" not in st.session_state:
@@ -725,7 +795,7 @@ elif MODULE == "inventory":
     st.markdown("""
     <div class="interpret-box">
     <b>Bài toán:</b> Khi tồn kho ≤ s (reorder point), đặt thêm Q đơn vị.
-    Nhu cầu hàng ngày và lead time đều là biến ngẫu nhiên rời rạc (<code>PsiDiscrete</code>).
+    Nhu cầu hàng ngày và lead time đều là biến ngẫu nhiên rời rạc (<code>Discrete</code>).
     Tìm (s, Q) tối thiểu chi phí với ràng buộc Service Level ≥ 98%.
     </div>
     """, unsafe_allow_html=True)
@@ -752,14 +822,14 @@ elif MODULE == "inventory":
 
     col_dist1, col_dist2 = st.columns(2)
     with col_dist1:
-        st.markdown("**Demand distribution (PsiDiscrete)**")
+        st.markdown("**Demand distribution (Discrete)**")
         dd_df = pd.DataFrame({"Demand": list(DEMAND_DIST.keys()), "Prob": list(DEMAND_DIST.values())})
         fig_dd, ax_dd = new_fig(figsize=(5, 2.5))
         ax_dd.bar(dd_df["Demand"], dd_df["Prob"], color=TEAL, alpha=0.8, width=0.7)
         style_ax(ax_dd, "Nhu cầu hàng ngày", "Đơn vị", "Xác suất")
         show_fig(fig_dd)
     with col_dist2:
-        st.markdown("**Lead time distribution (PsiDiscrete)**")
+        st.markdown("**Lead time distribution (Discrete)**")
         lt_df = pd.DataFrame({"Lead": list(LEAD_DIST.keys()), "Prob": list(LEAD_DIST.values())})
         fig_lt, ax_lt = new_fig(figsize=(5, 2.5))
         ax_lt.bar(lt_df["Lead"], lt_df["Prob"], color=GOLD, alpha=0.8, width=0.5)
@@ -858,8 +928,8 @@ elif MODULE == "project":
     st.markdown("""
     <div class="interpret-box">
     <b>Bài toán:</b> Chọn tập hợp dự án trong ngân sách $2M để tối đa hoá lợi nhuận kỳ vọng.
-    Revenue mỗi dự án theo <code>PsiTriangular</code> (min/most-likely/max) nếu thành công,
-    thành công theo <code>PsiBinomial</code>.
+    Revenue mỗi dự án theo <code>Triangular</code> (min/most-likely/max) nếu thành công,
+    thành công theo <code>Binomial</code>.
     </div>
     """, unsafe_allow_html=True)
 
@@ -953,7 +1023,7 @@ elif MODULE == "portfolio":
     st.markdown("""
     <div class="interpret-box">
     <b>Bài toán McDaniel Group:</b> Phân bổ $1B vào 5 loại nhà máy điện.
-    Return mỗi loại có tương quan nhau (<code>PsiCorrMat</code>).
+    Return mỗi loại có tương quan nhau (<code>Correlated Returns</code>).
     Tìm danh mục tối ưu trên <b>efficient frontier</b>: max E[Return] với σ ≤ σ_max.
     </div>
     """, unsafe_allow_html=True)
@@ -1062,12 +1132,12 @@ elif MODULE == "rng":
     st.markdown('<div class="section-hdr"><span class="sec-num">🎰</span> RNG PLAYGROUND — KHÁM PHÁ PHÂN PHỐI</div>', unsafe_allow_html=True)
 
     dist = st.selectbox("Chọn phân phối", [
-        "Normal (PsiNormal)",
-        "Uniform (PsiUniform)",
-        "Triangular (PsiTriangular)",
-        "Discrete (PsiDiscrete)",
-        "Binomial (PsiBinomial)",
-        "Lognormal (PsiLognormal)",
+        "Normal (Normal)",
+        "Uniform (Uniform)",
+        "Triangular (Triangular)",
+        "Discrete (Discrete)",
+        "Binomial (Binomial)",
+        "Lognormal (Lognormal)",
     ])
 
     col_p, col_c = st.columns([1, 2])
@@ -1080,20 +1150,20 @@ elif MODULE == "rng":
             mu    = st.number_input("Mean (μ)", value=0.0)
             sigma = st.number_input("Std Dev (σ)", value=1.0, min_value=0.01)
             samples = rng_play.normal(mu, sigma, N)
-            formula = f"=PsiNormal({mu}, {sigma})"
+            formula = f"Normal({mu}, {sigma})"
         elif "Uniform" in dist:
             lo = st.number_input("Min (a)", value=0.0)
             hi = st.number_input("Max (b)", value=1.0)
             if hi <= lo: hi = lo + 1
             samples = rng_play.uniform(lo, hi, N)
-            formula = f"=PsiUniform({lo}, {hi})"
+            formula = f"Uniform({lo}, {hi})"
         elif "Triangular" in dist:
             lo  = st.number_input("Min (a)", value=0.0)
             mid = st.number_input("Most Likely (c)", value=5.0)
             hi  = st.number_input("Max (b)", value=10.0)
             if not (lo <= mid <= hi): mid = (lo+hi)/2
             samples = rng_play.triangular(lo, mid, hi, N)
-            formula = f"=PsiTriangular({lo}, {mid}, {hi})"
+            formula = f"Triangular({lo}, {mid}, {hi})"
         elif "Discrete" in dist:
             vals_s  = st.text_input("Giá trị (cách bởi dấu phẩy)", "10,20,30")
             probs_s = st.text_input("Xác suất (tổng = 1)", "0.3,0.5,0.2")
@@ -1102,19 +1172,19 @@ elif MODULE == "rng":
                 probs = [float(x) for x in probs_s.split(",")]
                 probs = [p/sum(probs) for p in probs]
                 samples = rng_play.choice(vals, p=probs, size=N)
-                formula = f"=PsiDiscrete({{{vals_s}}}, {{{probs_s}}})"
+                formula = f"Discrete({{{vals_s}}}, {{{probs_s}}})"
             except:
                 st.error("Lỗi nhập liệu"); samples = np.zeros(N); formula = ""
         elif "Binomial" in dist:
             n_tri = st.number_input("n (số lần thử)", value=20, min_value=1)
             p_suc = st.slider("p (xác suất thành công)", 0.0, 1.0, 0.3, 0.01)
             samples = rng_play.binomial(int(n_tri), p_suc, N)
-            formula = f"=PsiBinomial({int(n_tri)}, {p_suc})"
+            formula = f"Binomial({int(n_tri)}, {p_suc})"
         else:  # Lognormal
             mu_ln    = st.number_input("μ (log-scale)", value=0.0)
             sigma_ln = st.number_input("σ (log-scale)", value=0.5, min_value=0.01)
             samples  = rng_play.lognormal(mu_ln, sigma_ln, N)
-            formula  = f"=PsiLognormal({mu_ln}, {sigma_ln})"
+            formula  = f"Lognormal({mu_ln}, {sigma_ln})"
 
         st.markdown(f'<div class="formula-box">{formula}</div>', unsafe_allow_html=True)
         st.markdown("---")
