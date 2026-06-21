@@ -16,19 +16,19 @@ import io, warnings
 warnings.filterwarnings("ignore")
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COLOUR PALETTE  (mirrors forecasting_app dark chart style)
+# COLOUR PALETTE  (light theme)
 # ══════════════════════════════════════════════════════════════════════════════
-DARK   = "#0d1117"
-PANEL  = "#161b22"
-GRID   = "#21262d"
-WHITE  = "#e6edf3"
-GRAY   = "#8b949e"
-BLUE   = "#58a6ff"
-TEAL   = "#39d353"
-GOLD   = "#f0883e"
-RED    = "#f85149"
-PURPLE = "#bc8cff"
-PINK   = "#ff7b72"
+DARK   = "#ffffff"   # chart bg
+PANEL  = "#f6f8fa"   # panel / card bg
+GRID   = "#d0d7de"   # grid lines
+WHITE  = "#1a1a2e"   # text on charts
+GRAY   = "#57606a"   # secondary text
+BLUE   = "#0969da"   # primary accent
+TEAL   = "#1a7f37"   # success / positive
+GOLD   = "#953800"   # warning / highlight
+RED    = "#cf222e"   # danger / negative
+PURPLE = "#6639ba"   # purple accent
+PINK   = "#e85c8a"   # pink accent
 
 # ══════════════════════════════════════════════════════════════════════════════
 # PAGE CONFIG & CSS
@@ -43,33 +43,38 @@ st.set_page_config(
 st.markdown("""
 <style>
 /* ── Base ── */
-[data-testid="stAppViewContainer"] { background:#0d1117; }
-[data-testid="stSidebar"]          { background:#161b22; border-right:1px solid #30363d; }
-[data-testid="stSidebar"] *        { color:#c9d1d9 !important; }
+[data-testid="stAppViewContainer"] { background:#ffffff; }
+[data-testid="stMain"] { background:#ffffff; }
+[data-testid="stSidebar"]          { background:#f6f8fa; border-right:1px solid #d0d7de; }
+[data-testid="stSidebar"] *        { color:#1f2328 !important; }
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] .stNumberInput label,
-[data-testid="stSidebar"] .stSlider label { color:#8b949e !important; }
+[data-testid="stSidebar"] .stSlider label { color:#57606a !important; }
+
+/* ── Streamlit default text overrides ── */
+p, li, span, label, div { color:#1f2328; }
+h1, h2, h3, h4 { color:#1f2328; }
 
 /* ── Hero ── */
 .hero-title {
     font-size:2.1rem; font-weight:700; letter-spacing:-.03em;
-    background:linear-gradient(90deg,#58a6ff,#39d353,#f0883e);
+    background:linear-gradient(90deg,#0969da,#1a7f37,#953800);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent;
     margin-bottom:.15rem;
 }
 .hero-sub {
-    font-size:.93rem; color:#8b949e; margin-bottom:1.4rem; max-width:780px;
+    font-size:.93rem; color:#57606a; margin-bottom:1.4rem; max-width:780px;
 }
 
-/* ── Section headers (numbered circles) ── */
+/* ── Section headers ── */
 .section-hdr {
     font-size:.78rem; font-weight:700; letter-spacing:.12em;
-    text-transform:uppercase; color:#8b949e;
-    border-bottom:1px solid #30363d;
+    text-transform:uppercase; color:#57606a;
+    border-bottom:1px solid #d0d7de;
     padding:.35rem 0 .45rem; margin:1.2rem 0 .7rem;
 }
 .sec-num {
-    display:inline-block; background:#1f6feb; color:#fff;
+    display:inline-block; background:#0969da; color:#fff;
     border-radius:50%; width:1.35em; height:1.35em;
     text-align:center; line-height:1.35em;
     font-size:.8em; margin-right:.45rem;
@@ -77,60 +82,60 @@ st.markdown("""
 
 /* ── Info / warn / error boxes ── */
 .info-box {
-    background:#161b22; border:1px solid #1f6feb; border-left:4px solid #1f6feb;
+    background:#ddf4ff; border:1px solid #54aeff; border-left:4px solid #0969da;
     border-radius:8px; padding:.75rem 1rem;
-    font-size:.85rem; color:#c9d1d9; margin:.6rem 0;
+    font-size:.85rem; color:#1f2328; margin:.6rem 0;
 }
 .warn-box {
-    background:#2d2000; border:1px solid #9e6a03; border-left:4px solid #f0883e;
+    background:#fff8c5; border:1px solid #d4a72c; border-left:4px solid #953800;
     border-radius:8px; padding:.65rem .9rem;
-    font-size:.84rem; color:#ffa657; margin:.5rem 0;
+    font-size:.84rem; color:#6e4f00; margin:.5rem 0;
 }
 .err-box {
-    background:#3b1219; border:1px solid #8b1a1a; border-left:4px solid #f85149;
+    background:#ffebe9; border:1px solid #ff8182; border-left:4px solid #cf222e;
     border-radius:8px; padding:.65rem .9rem;
-    font-size:.84rem; color:#ffa198; margin:.5rem 0;
+    font-size:.84rem; color:#82071e; margin:.5rem 0;
 }
 .success-box {
-    background:#0d2b0d; border:1px solid #238636; border-left:4px solid #39d353;
+    background:#dafbe1; border:1px solid #4ac26b; border-left:4px solid #1a7f37;
     border-radius:8px; padding:.65rem .9rem;
-    font-size:.84rem; color:#56d364; margin:.5rem 0;
+    font-size:.84rem; color:#116329; margin:.5rem 0;
 }
 .interpret-box {
-    background:#161b22; border:1px solid #30363d; border-left:4px solid #39d353;
+    background:#f6f8fa; border:1px solid #d0d7de; border-left:4px solid #1a7f37;
     border-radius:8px; padding:.75rem 1rem;
-    font-size:.84rem; color:#c9d1d9; margin:.6rem 0; line-height:1.6;
+    font-size:.84rem; color:#1f2328; margin:.6rem 0; line-height:1.6;
 }
 
 /* ── Metric cards ── */
 .metric-card {
-    background:#161b22; border:1px solid #30363d; border-radius:10px;
+    background:#f6f8fa; border:1px solid #d0d7de; border-radius:10px;
     padding:.9rem 1.1rem; text-align:center;
 }
-.metric-label { font-size:.72rem; color:#8b949e; text-transform:uppercase; letter-spacing:.08em; }
-.metric-value { font-size:1.6rem; font-weight:700; color:#58a6ff; }
-.metric-sub   { font-size:.72rem; color:#6e7681; }
+.metric-label { font-size:.72rem; color:#57606a; text-transform:uppercase; letter-spacing:.08em; }
+.metric-value { font-size:1.6rem; font-weight:700; color:#0969da; }
+.metric-sub   { font-size:.72rem; color:#6e7781; }
 
 /* ── Formula box ── */
 .formula-box {
-    background:#0d1b2a; border:1px solid #1f6feb; border-radius:8px;
+    background:#eaeef2; border:1px solid #0969da; border-radius:8px;
     padding:.7rem 1.1rem; margin:.5rem 0;
     font-family:'Courier New',monospace; font-size:.92rem;
-    color:#f0883e; letter-spacing:.02em;
+    color:#953800; letter-spacing:.02em;
 }
-.formula-desc { font-size:.78rem; color:#8b949e; margin-top:.25rem; }
+.formula-desc { font-size:.78rem; color:#57606a; margin-top:.25rem; }
 
 /* ── Step badge ── */
 .step-badge {
-    display:inline-block; background:#1f6feb; color:#fff;
+    display:inline-block; background:#0969da; color:#fff;
     border-radius:6px; padding:.15rem .55rem;
     font-size:.75rem; font-weight:700; margin-right:.4rem;
 }
 
 /* ── VaR highlight ── */
 .var-highlight {
-    background:#1a2030; border:1px solid #58a6ff; border-radius:8px;
-    padding:.7rem 1rem; font-size:.85rem; color:#c9d1d9; margin:.6rem 0;
+    background:#eaeef2; border:1px solid #0969da; border-radius:8px;
+    padding:.7rem 1rem; font-size:.85rem; color:#1f2328; margin:.6rem 0;
 }
 
 /* ── Distribution tag ── */
@@ -1486,12 +1491,4 @@ elif MODULE == "custom":
         )
 
 
-# ── Footer ─────────────────────────────────────────────────────────────────
-st.markdown("---")
-st.markdown(
-    '<div style="text-align:center;font-size:.76rem;color:#484f58">'
-    '🎲 Simulation Analyst  ·  Monte Carlo · Chapter 12 · Analytic Solver method  ·  '
-    'Built with Streamlit & NumPy  ·  No Analytic Solver required'
-    '</div>',
-    unsafe_allow_html=True,
-)
+# ── End ────────────────────────────────────────────────────────────────────
