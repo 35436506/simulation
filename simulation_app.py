@@ -492,9 +492,33 @@ with st.sidebar:
     MODULE = MODULES[module_label]
 
     st.markdown('<div class="section-hdr"><span class="sec-num">②</span> THIẾT LẬP MÔ PHỎNG</div>', unsafe_allow_html=True)
-    n_sims = st.selectbox("Số lần lặp (replications)", [500, 1000, 2000, 5000, 10000], index=2)
-    ci_alpha = st.selectbox("Độ tin cậy CI", [0.90, 0.95, 0.99], index=1, format_func=lambda x: f"{x:.0%}")
-    seed = st.number_input("Random seed", value=42, min_value=0, max_value=9999)
+
+    # Số lần lặp (n_sims): số kịch bản ngẫu nhiên mà app sẽ tạo ra để mô phỏng.
+    # Lặp nhiều hơn → kết quả ổn định, đáng tin hơn, nhưng chạy lâu hơn.
+    n_sims = st.selectbox(
+        "Số lần lặp (replications)", [500, 1000, 2000, 5000, 10000], index=2,
+        help="Số kịch bản ngẫu nhiên app sẽ chạy thử. Càng nhiều lần lặp, "
+             "kết quả trung bình càng ổn định và đáng tin — nhưng chạy chậm hơn."
+    )
+
+    # Độ tin cậy CI (ci_alpha): mức % chắc chắn rằng khoảng kết quả chứa giá trị thật.
+    # 95% là lựa chọn cân bằng và phổ biến nhất.
+    ci_alpha = st.selectbox(
+        "Độ tin cậy CI", [0.90, 0.95, 0.99], index=1, format_func=lambda x: f"{x:.0%}",
+        help="Mức độ 'chắc chắn' của khoảng tin cậy (CI) cho giá trị trung bình thật. "
+             "Ví dụ 95% nghĩa là: nếu lặp lại mô phỏng nhiều lần, khoảng 95% số lần "
+             "khoảng kết quả sẽ chứa đúng giá trị trung bình thật."
+    )
+
+    # Random seed: điểm khởi đầu cho bộ sinh số ngẫu nhiên.
+    # Cùng seed → cùng kết quả mỗi lần chạy lại (giúp so sánh công bằng giữa các phương án).
+    # Đổi seed → ra bộ kịch bản ngẫu nhiên khác (giúp kiểm tra độ ổn định của kết quả).
+    seed = st.number_input(
+        "Random seed", value=42, min_value=0, max_value=9999,
+        help="Mã khởi đầu cho việc tạo số ngẫu nhiên. Giữ nguyên seed để chạy lại "
+             "ra đúng kết quả cũ (tiện so sánh phương án). Đổi seed để xem kết quả "
+             "có ổn định không hay chỉ là ăn may."
+    )
 
 st.markdown("---")
 
