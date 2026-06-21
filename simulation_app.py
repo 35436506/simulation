@@ -544,19 +544,94 @@ if MODULE == "theory":
         st.markdown(f'<div style="margin-left:2.5rem;font-size:.84rem;color:{GRAY};margin-bottom:.6rem">{desc}</div>', unsafe_allow_html=True)
 
     st.divider()
-    st.markdown('<div class="section-hdr"><span class="sec-num">③</span> CÁC HÀM RNG (ANALYTIC SOLVER)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-hdr"><span class="sec-num">③</span> CÁC HÀM PHÂN PHỐI XÁC SUẤT</div>', unsafe_allow_html=True)
 
-    rng_data = {
-        "Normal(μ, σ)":         ["Normal", "Liên tục, đối xứng", "Chi phí, tốc độ tăng trưởng"],
-        "Uniform(a, b)":        ["Uniform", "Mọi giá trị trong [a,b]", "Thay đổi % NV, tỷ lệ"],
-        "Triangular(a, c, b)":  ["Triangular", "min / most-likely / max", "Ước tính 3-điểm (PM)"],
-        "Discrete({v},{p})":    ["Discrete", "Rời rạc, xác suất cho trước", "Nhu cầu, lead time"],
-        "Binomial(n, p)":       ["Binomial", "Số thành công trong n lần", "No-show, tỷ lệ lỗi"],
-        "Lognormal(μ, σ)":      ["Lognormal", "Chỉ dương, lệch phải", "Giá tài sản, doanh thu"],
-    }
-    rng_df = pd.DataFrame(rng_data, index=["Phân phối", "Hình dạng", "Dùng khi"]).T
-    rng_df.index.name = "Hàm phân phối"
-    st.dataframe(rng_df, use_container_width=True)
+    # ── SVG mini-chart helpers ──────────────────────────────────────────────
+    def _svg(path_d, color, w=90, h=44, extra=""):
+        return (
+            f'<svg width="{w}" height="{h}" viewBox="0 0 {w} {h}" '
+            f'xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">'
+            f'<rect width="{w}" height="{h}" rx="6" fill="#eaeef2"/>'
+            f'{extra}'
+            f'<path d="{path_d}" fill="{color}" fill-opacity=".18" stroke="{color}" stroke-width="1.8" stroke-linejoin="round"/>'
+            f'</svg>'
+        )
+
+    svg_normal = _svg(
+        "M5,40 C15,40 22,8 45,8 C68,8 75,40 85,40 Z", "#0969da")
+    svg_uniform = _svg(
+        "M10,38 L10,10 L80,10 L80,38 Z", "#1a7f37")
+    svg_triangular = _svg(
+        "M5,40 L45,6 L85,40 Z", "#953800")
+    svg_discrete = (
+        '<svg width="90" height="44" viewBox="0 0 90 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">'
+        '<rect width="90" height="44" rx="6" fill="#eaeef2"/>'
+        '<rect x="8"  y="26" width="10" height="14" rx="2" fill="#6639ba" fill-opacity=".7"/>'
+        '<rect x="24" y="16" width="10" height="24" rx="2" fill="#6639ba" fill-opacity=".7"/>'
+        '<rect x="40" y="10" width="10" height="30" rx="2" fill="#6639ba" fill-opacity=".7"/>'
+        '<rect x="56" y="20" width="10" height="20" rx="2" fill="#6639ba" fill-opacity=".7"/>'
+        '<rect x="72" y="30" width="10" height="10" rx="2" fill="#6639ba" fill-opacity=".7"/>'
+        '</svg>'
+    )
+    svg_binomial = (
+        '<svg width="90" height="44" viewBox="0 0 90 44" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">'
+        '<rect width="90" height="44" rx="6" fill="#eaeef2"/>'
+        '<rect x="6"  y="36" width="8" height="4"  rx="1" fill="#cf222e" fill-opacity=".6"/>'
+        '<rect x="17" y="28" width="8" height="12" rx="1" fill="#cf222e" fill-opacity=".7"/>'
+        '<rect x="28" y="16" width="8" height="24" rx="1" fill="#cf222e" fill-opacity=".85"/>'
+        '<rect x="39" y="10" width="8" height="30" rx="1" fill="#cf222e"/>'
+        '<rect x="50" y="16" width="8" height="24" rx="1" fill="#cf222e" fill-opacity=".85"/>'
+        '<rect x="61" y="28" width="8" height="12" rx="1" fill="#cf222e" fill-opacity=".7"/>'
+        '<rect x="72" y="36" width="8" height="4"  rx="1" fill="#cf222e" fill-opacity=".6"/>'
+        '</svg>'
+    )
+    svg_lognormal = _svg(
+        "M5,40 C8,40 12,38 18,22 C24,8 30,6 36,10 C50,18 65,36 85,40 Z", "#e85c8a")
+
+    RNG_CARDS = [
+        ("Normal(μ, σ)", svg_normal, "#0969da",
+         "Liên tục, hình chuông đối xứng quanh μ",
+         "Chi phí vận hành, tốc độ tăng trưởng, sai số đo lường",
+         "μ = giá trị trung bình &nbsp;|&nbsp; σ = độ lệch chuẩn (σ > 0)"),
+        ("Uniform(a, b)", svg_uniform, "#1a7f37",
+         "Mọi giá trị trong [a, b] có xác suất bằng nhau",
+         "Tỷ lệ thay đổi nhân sự, ước tính khi chỉ biết min-max",
+         "a = giá trị nhỏ nhất &nbsp;|&nbsp; b = giá trị lớn nhất"),
+        ("Triangular(a, c, b)", svg_triangular, "#953800",
+         "3 điểm: min / most-likely / max — hình tam giác",
+         "Ước tính thời gian dự án (PM), chi phí khi có kinh nghiệm",
+         "a = min &nbsp;|&nbsp; c = most-likely (đỉnh) &nbsp;|&nbsp; b = max"),
+        ("Discrete({v}, {p})", svg_discrete, "#6639ba",
+         "Rời rạc: mỗi giá trị vᵢ có xác suất pᵢ cho trước",
+         "Nhu cầu khách hàng, lead time, số lượng đặt hàng",
+         "v = danh sách giá trị &nbsp;|&nbsp; p = danh sách xác suất (Σp = 1)"),
+        ("Binomial(n, p)", svg_binomial, "#cf222e",
+         "Số lần thành công trong n phép thử độc lập, mỗi lần xác suất p",
+         "Số khách no-show, số sản phẩm lỗi, số giao dịch thành công",
+         "n = số lần thử &nbsp;|&nbsp; p = xác suất thành công mỗi lần (0 < p < 1)"),
+        ("Lognormal(μ, σ)", svg_lognormal, "#e85c8a",
+         "Chỉ nhận giá trị dương, lệch phải — ln(X) ~ Normal",
+         "Giá tài sản tài chính, doanh thu, thời gian sửa chữa",
+         "μ, σ là tham số của ln(X) &nbsp;|&nbsp; Mean thực = e^(μ + σ²/2)"),
+    ]
+
+    for i in range(0, len(RNG_CARDS), 2):
+        cols = st.columns(2)
+        for j, col in enumerate(cols):
+            if i + j >= len(RNG_CARDS): break
+            name, svg, color, shape, use_when, params = RNG_CARDS[i + j]
+            col.markdown(f'''
+<div style="display:flex;gap:12px;align-items:flex-start;background:#f6f8fa;
+            border:1px solid #d0d7de;border-left:4px solid {color};
+            border-radius:8px;padding:10px 12px;margin-bottom:8px">
+  {svg}
+  <div style="min-width:0">
+    <div style="font-family:monospace;font-size:.88rem;font-weight:700;color:{color};margin-bottom:3px">{name}</div>
+    <div style="font-size:.78rem;color:#1f2328;margin-bottom:3px"><b>Hình dạng:</b> {shape}</div>
+    <div style="font-size:.78rem;color:#1f2328;margin-bottom:3px"><b>Dùng khi:</b> {use_when}</div>
+    <div style="font-size:.76rem;color:#57606a">{params}</div>
+  </div>
+</div>''', unsafe_allow_html=True)
 
     st.divider()
     st.markdown('<div class="section-hdr"><span class="sec-num">④</span> CÔNG THỨC PHÂN TÍCH KẾT QUẢ</div>', unsafe_allow_html=True)
@@ -568,7 +643,7 @@ CI &nbsp;=&nbsp; <span style="text-decoration:overline;font-style:normal">x</spa
 <div class="formula-desc">
   Khoảng tin cậy (Confidence Interval) ước lượng giá trị trung bình thực của Y<br>
   &nbsp;&bull;&nbsp;<b style="color:#0969da"><span style="text-decoration:overline">x</span></b> = trung bình của n kết quả mô phỏng<br>
-  &nbsp;&bull;&nbsp;<b style="color:#0969da">t*</b> = hệ số t-critical (tra bảng t theo df = n−1 và mức tin cậy)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">t*</b> = hệ số t-critical → xem bảng bên dưới<br>
   &nbsp;&bull;&nbsp;<b style="color:#0969da">s</b> = độ lệch chuẩn mẫu (đo mức độ phân tán kết quả)<br>
   &nbsp;&bull;&nbsp;<b style="color:#0969da">n</b> = số lần lặp mô phỏng (replications)
 </div></div>''', unsafe_allow_html=True)
@@ -576,7 +651,7 @@ CI &nbsp;=&nbsp; <span style="text-decoration:overline;font-style:normal">x</spa
 n &nbsp;=&nbsp; (z* &middot; &sigma; &frasl; E)&sup2;
 <div class="formula-desc">
   Số lần lặp tối thiểu để đạt độ chính xác mong muốn<br>
-  &nbsp;&bull;&nbsp;<b style="color:#0969da">z*</b> = hệ số z (1.645 cho 90%, 1.96 cho 95%, 2.576 cho 99%)<br>
+  &nbsp;&bull;&nbsp;<b style="color:#0969da">z*</b> = hệ số z → xem bảng bên dưới<br>
   &nbsp;&bull;&nbsp;<b style="color:#0969da">&sigma;</b> = độ lệch chuẩn ước tính (chạy thử ~100 lần để có)<br>
   &nbsp;&bull;&nbsp;<b style="color:#0969da">E</b> = sai số tối đa chấp nhận được (&plusmn;E)
 </div></div>''', unsafe_allow_html=True)
@@ -599,6 +674,76 @@ VaR:&nbsp; P(Y &gt; T) &nbsp;&le;&nbsp; &alpha;
   &nbsp;&bull;&nbsp;<b style="color:#0969da">&alpha;</b> = mức rủi ro tối đa chấp nhận (thường 5% hoặc 2.5%)<br>
   &nbsp;&bull;&nbsp;Ý nghĩa: xác suất kết quả tệ hơn T không được vượt &alpha;
 </div></div>''', unsafe_allow_html=True)
+
+    # ── Lookup tables ───────────────────────────────────────────────────────
+    st.divider()
+    st.markdown('<div class="section-hdr"><span class="sec-num">⑤</span> BẢNG TRA HỆ SỐ t* VÀ z*</div>', unsafe_allow_html=True)
+
+    tab_t, tab_z = st.tabs(["📋 Bảng t* (t-critical)", "📋 Bảng z*"])
+
+    with tab_t:
+        st.markdown("""
+        <div class="info-box">
+        <b>Khi nào dùng t*?</b> Khi tính Khoảng Tin Cậy (CI) cho mean của kết quả mô phỏng.
+        Tra theo <b>df = n − 1</b> (n = số lần lặp) và mức tin cậy mong muốn.
+        Với n ≥ 1000 (thường gặp trong Monte Carlo), t* ≈ z* nên có thể dùng z* thay thế.
+        </div>
+        """, unsafe_allow_html=True)
+        t_data = {
+            "df (n−1)": [5, 10, 20, 30, 50, 100, 200, 500, "≥1000 (∞)"],
+            "80% CI (α=0.20)": [1.476, 1.372, 1.325, 1.310, 1.299, 1.290, 1.286, 1.283, 1.282],
+            "90% CI (α=0.10)": [2.015, 1.812, 1.725, 1.697, 1.676, 1.660, 1.653, 1.648, 1.645],
+            "95% CI (α=0.05)": [2.571, 2.228, 2.086, 2.042, 2.009, 1.984, 1.972, 1.965, 1.960],
+            "99% CI (α=0.01)": [4.032, 3.169, 2.845, 2.750, 2.678, 2.626, 2.601, 2.586, 2.576],
+        }
+        t_df = pd.DataFrame(t_data)
+        st.dataframe(
+            t_df.style.set_properties(**{"text-align": "center"})
+                .set_table_styles([{"selector": "th", "props": [("text-align", "center")]}])
+                .highlight_between(subset=["95% CI (α=0.05)"], color="#ddf4ff"),
+            use_container_width=True, hide_index=True
+        )
+        st.markdown("""
+        <div style="font-size:.8rem;color:#57606a;margin-top:.4rem">
+        💡 <b>Ví dụ:</b> Chạy n=2000 lần → df=1999 ≈ ∞ → t* = <b>1.960</b> cho CI 95%.
+        Nếu mean = $38M và s/√n = $0.5M → CI 95% = [$37.02M, $38.98M].
+        </div>
+        """, unsafe_allow_html=True)
+
+    with tab_z:
+        st.markdown("""
+        <div class="info-box">
+        <b>Khi nào dùng z*?</b> Khi tính <b>số lần lặp tối thiểu</b> n = (z*·σ/E)²,
+        hoặc thay thế t* khi n ≥ 1000. z* không phụ thuộc df, chỉ phụ thuộc mức tin cậy.
+        </div>
+        """, unsafe_allow_html=True)
+        z_data = {
+            "Mức tin cậy": ["80%", "85%", "90%", "95%", "98%", "99%", "99.5%", "99.9%"],
+            "α (hai phía)": ["0.20", "0.15", "0.10", "0.05", "0.02", "0.01", "0.005", "0.001"],
+            "z*": [1.282, 1.440, 1.645, 1.960, 2.326, 2.576, 2.807, 3.291],
+            "Ý nghĩa thực tế": [
+                "1 trong 5 CI sẽ sai",
+                "~1 trong 7 CI sẽ sai",
+                "1 trong 10 CI sẽ sai",
+                "1 trong 20 CI sẽ sai ✅ phổ biến nhất",
+                "1 trong 50 CI sẽ sai",
+                "1 trong 100 CI sẽ sai",
+                "1 trong 200 CI sẽ sai",
+                "1 trong 1000 CI sẽ sai",
+            ],
+        }
+        z_df = pd.DataFrame(z_data)
+        st.dataframe(
+            z_df.style.set_properties(**{"text-align": "center"})
+                .highlight_between(subset=["z*"], left=1.959, right=1.961, color="#ddf4ff"),
+            use_container_width=True, hide_index=True
+        )
+        st.markdown("""
+        <div style="font-size:.8rem;color:#57606a;margin-top:.4rem">
+        💡 <b>Ví dụ:</b> Muốn CI 95% với sai số ±$0.5M, σ ước tính = $5M
+        → n = (1.96 × 5 / 0.5)² = (19.6)² ≈ <b>385 lần lặp tối thiểu</b>.
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="info-box">
