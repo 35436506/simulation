@@ -408,6 +408,7 @@ MODULES = {
     "📂 Project Selection":         "project",
     "📈 Portfolio Optimization":    "portfolio",
     "🎰 RNG Playground":            "rng",
+    "📁 Custom Simulation (Excel)": "custom",
 }
 
 with st.sidebar:
@@ -1142,6 +1143,348 @@ elif MODULE == "rng":
 
         fig_p.tight_layout(pad=1.5)
         show_fig(fig_p)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# MODULE: CUSTOM SIMULATION (Excel Upload)
+# ══════════════════════════════════════════════════════════════════════════════
+elif MODULE == "custom":
+    st.markdown('<div class="section-hdr"><span class="sec-num">📁</span> CUSTOM SIMULATION — TỰ ĐỊNH NGHĨA BÀI TOÁN</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="interpret-box">
+    <b>Hướng dẫn:</b> Upload file Excel (.xlsx/.xls) chứa dữ liệu đầu vào. Sau đó định nghĩa
+    <b>các biến ngẫu nhiên</b> (chọn cột & phân phối) và <b>công thức đầu ra</b> (biểu thức Python).
+    App sẽ chạy Monte Carlo và phân tích phân phối kết quả.<br><br>
+    <b>Ví dụ công thức đầu ra:</b> <code>revenue - cost</code>, <code>price * quantity * (1 - discount)</code>,
+    <code>income - tax * income</code>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # ── Step 1: Upload ──────────────────────────────────────────────────────
+    st.markdown('<div class="section-hdr"><span class="sec-num">①</span> UPLOAD FILE EXCEL</div>', unsafe_allow_html=True)
+
+    uploaded_file = st.file_uploader(
+        "Chọn file Excel (.xlsx hoặc .xls)",
+        type=["xlsx", "xls"],
+        help="File cần có ít nhất 1 sheet với dữ liệu dạng bảng (hàng đầu = tên cột)."
+    )
+
+    if uploaded_file is not None:
+        try:
+            xls = pd.ExcelFile(uploaded_file)
+            sheet_names = xls.sheet_names
+
+            col_sheet, col_preview = st.columns([1, 3])
+            with col_sheet:
+                chosen_sheet = st.selectbox("Chọn sheet", sheet_names)
+
+            raw_df = pd.read_excel(uploaded_file, sheet_name=chosen_sheet)
+
+            with col_preview:
+                st.markdown(f"**Preview — {chosen_sheet}** ({raw_df.shape[0]} hàng × {raw_df.shape[1]} cột)")
+                st.dataframe(raw_df.head(10), use_container_width=True, height=200)
+
+            numeric_cols = raw_df.select_dtypes(include=[np.number]).columns.tolist()
+
+            if not numeric_cols:
+                st.markdown('<div class="warn-box">⚠️ Sheet này không có cột số nào. Vui lòng chọn sheet khác.</div>', unsafe_allow_html=True)
+            else:
+                # ── Step 2: Define random variables ────────────────────────
+                st.markdown('<div class="section-hdr"><span class="sec-num">②</span> ĐỊNH NGHĨA BIẾN NGẪU NHIÊN</div>', unsafe_allow_html=True)
+
+                st.markdown("""
+                <div class="info-box">
+                Chọn các cột sẽ được coi là <b>biến ngẫu nhiên</b>. Với mỗi biến, chọn phân phối phù hợp.
+                Các tham số mặc định tự động tính từ dữ liệu (mean, std, min, max).
+                </div>
+                """, unsafe_allow_html=True)
+
+                n_vars = st.number_input("Số biến ngẫu nhiên", min_value=1, max_value=min(8, len(numeric_cols)), value=min(2, len(numeric_cols)), step=1)
+
+                DIST_OPTIONS = ["Normal", "Uniform", "Triangular", "Lognormal", "Pert"]
+                rv_configs = []
+
+                for vi in range(int(n_vars)):
+                    with st.expander(f"🎲 Biến ngẫu nhiên #{vi+1}", expanded=(vi < 2)):
+                        c_col, c_dist, c_p1, c_p2, c_p3 = st.columns([2, 2, 1.2, 1.2, 1.2])
+                        with c_col:
+                            chosen_col = st.selectbox(f"Cột dữ liệu", numeric_cols, key=f"rv_col_{vi}",
+                                                       index=min(vi, len(numeric_cols)-1))
+                        col_data = raw_df[chosen_col].dropna()
+                        col_mean  = float(col_data.mean())
+                        col_std   = max(float(col_data.std()), 1e-9)
+                        col_min   = float(col_data.min())
+                        col_max   = float(col_data.max())
+                        col_mid   = float(col_data.median())
+
+                        with c_dist:
+                            dist_choice = st.selectbox(f"Phân phối", DIST_OPTIONS, key=f"rv_dist_{vi}")
+
+                        if dist_choice == "Normal":
+                            with c_p1: p1 = st.number_input("Mean (μ)", value=round(col_mean,4), key=f"p1_{vi}")
+                            with c_p2: p2 = st.number_input("Std (σ)", value=round(col_std,4), min_value=1e-6, key=f"p2_{vi}")
+                            p3 = None
+                        elif dist_choice == "Uniform":
+                            with c_p1: p1 = st.number_input("Min", value=round(col_min,4), key=f"p1_{vi}")
+                            with c_p2: p2 = st.number_input("Max", value=round(col_max,4), key=f"p2_{vi}")
+                            p3 = None
+                        elif dist_choice == "Triangular":
+                            with c_p1: p1 = st.number_input("Min", value=round(col_min,4), key=f"p1_{vi}")
+                            with c_p2: p2 = st.number_input("Most Likely", value=round(col_mid,4), key=f"p2_{vi}")
+                            with c_p3: p3 = st.number_input("Max", value=round(col_max,4), key=f"p3_{vi}")
+                        elif dist_choice == "Lognormal":
+                            ln_mu  = float(np.log(max(col_mean,1e-9)))
+                            ln_sig = float(np.sqrt(np.log(1 + (col_std/max(col_mean,1e-9))**2)))
+                            with c_p1: p1 = st.number_input("μ (log-scale)", value=round(ln_mu,4), key=f"p1_{vi}")
+                            with c_p2: p2 = st.number_input("σ (log-scale)", value=round(max(ln_sig,0.01),4), min_value=1e-6, key=f"p2_{vi}")
+                            p3 = None
+                        else:  # PERT
+                            with c_p1: p1 = st.number_input("Min", value=round(col_min,4), key=f"p1_{vi}")
+                            with c_p2: p2 = st.number_input("Most Likely", value=round(col_mid,4), key=f"p2_{vi}")
+                            with c_p3: p3 = st.number_input("Max", value=round(col_max,4), key=f"p3_{vi}")
+
+                        # Tên biến (dùng trong formula)
+                        var_name = st.text_input(
+                            "Tên biến (dùng trong công thức)",
+                            value=chosen_col.lower().replace(" ", "_").replace("-", "_")[:20],
+                            key=f"rv_name_{vi}",
+                            help="Tên này sẽ dùng trong công thức đầu ra. Chỉ dùng chữ, số, dấu _"
+                        )
+                        rv_configs.append({
+                            "col": chosen_col, "dist": dist_choice,
+                            "p1": p1, "p2": p2, "p3": p3,
+                            "var_name": var_name.strip() or f"x{vi+1}"
+                        })
+
+                # ── Step 3: Output formula ──────────────────────────────────
+                st.markdown('<div class="section-hdr"><span class="sec-num">③</span> CÔNG THỨC ĐẦU RA (OUTPUT)</div>', unsafe_allow_html=True)
+
+                var_names_hint = ", ".join([f"<code>{rv['var_name']}</code>" for rv in rv_configs])
+                st.markdown(f"""
+                <div class="info-box">
+                Nhập biểu thức Python sử dụng các biến: {var_names_hint}<br>
+                Ví dụ: <code>{rv_configs[0]['var_name']} * 1.2 - {rv_configs[-1]['var_name']}</code><br>
+                Hỗ trợ: <code>+, -, *, /, **, np.log(), np.exp(), np.sqrt(), abs(), max(), min()</code>
+                </div>
+                """, unsafe_allow_html=True)
+
+                default_formula = " - ".join([rv["var_name"] for rv in rv_configs]) if len(rv_configs) >= 2 else rv_configs[0]["var_name"]
+                output_formula = st.text_input(
+                    "Công thức đầu ra (Y =)",
+                    value=default_formula,
+                    placeholder="e.g. revenue - cost * quantity"
+                )
+                output_label = st.text_input("Tên chỉ số đầu ra", value="Output (Y)", placeholder="e.g. Profit ($)")
+                target_val   = st.number_input("VaR Target (giá trị ngưỡng)", value=0.0, step=1.0,
+                                                help="P(Y ≤ Target) và P(Y > Target) sẽ được tính.")
+
+                # ── Step 4: Run ─────────────────────────────────────────────
+                st.markdown('<div class="section-hdr"><span class="sec-num">④</span> CHẠY MÔ PHỎNG</div>', unsafe_allow_html=True)
+
+                run_custom = st.button("▶ Chạy Custom Simulation", use_container_width=True, type="primary")
+
+                if run_custom:
+                    rng_c = np.random.default_rng(int(seed))
+                    results_Y = np.empty(n_sims)
+                    errors = []
+
+                    # Sample each RV n_sims times
+                    sampled = {}
+                    for rv in rv_configs:
+                        d, p1, p2, p3, nm = rv["dist"], rv["p1"], rv["p2"], rv["p3"], rv["var_name"]
+                        try:
+                            if d == "Normal":
+                                sampled[nm] = rng_c.normal(p1, max(p2,1e-9), n_sims)
+                            elif d == "Uniform":
+                                lo_u, hi_u = min(p1,p2), max(p1,p2)
+                                if lo_u == hi_u: hi_u += 1e-9
+                                sampled[nm] = rng_c.uniform(lo_u, hi_u, n_sims)
+                            elif d == "Triangular":
+                                lo_t = min(p1, p2, p3)
+                                hi_t = max(p1, p2, p3)
+                                mid_t = sorted([p1, p2, p3])[1]
+                                if lo_t == hi_t: hi_t += 1e-9
+                                mid_t = np.clip(mid_t, lo_t, hi_t)
+                                sampled[nm] = rng_c.triangular(lo_t, mid_t, hi_t, n_sims)
+                            elif d == "Lognormal":
+                                sampled[nm] = rng_c.lognormal(p1, max(p2,1e-9), n_sims)
+                            else:  # PERT → approx via Beta
+                                lo_b = min(p1, p2, p3)
+                                hi_b = max(p1, p2, p3)
+                                mode_b = sorted([p1, p2, p3])[1]
+                                if hi_b == lo_b: hi_b += 1e-9
+                                mu_b  = (lo_b + 4*mode_b + hi_b) / 6.0
+                                sig_b = (hi_b - lo_b) / 6.0
+                                a_b = ((mu_b - lo_b) / (hi_b - lo_b)) * ((mu_b - lo_b) * (hi_b - mu_b) / sig_b**2 - 1)
+                                b_b = a_b * (hi_b - mu_b) / (mu_b - lo_b)
+                                a_b = max(a_b, 0.1); b_b = max(b_b, 0.1)
+                                sampled[nm] = lo_b + (hi_b - lo_b) * rng_c.beta(a_b, b_b, n_sims)
+                        except Exception as e:
+                            errors.append(f"Lỗi lấy mẫu biến '{nm}': {e}")
+
+                    if errors:
+                        for err in errors:
+                            st.markdown(f'<div class="err-box">❌ {err}</div>', unsafe_allow_html=True)
+                    else:
+                        # Evaluate formula
+                        eval_errors = []
+                        for i in range(n_sims):
+                            local_vars = {nm: sampled[nm][i] for nm in sampled}
+                            local_vars["np"] = np
+                            try:
+                                results_Y[i] = float(eval(output_formula, {"__builtins__": {}}, local_vars))
+                            except Exception as e:
+                                eval_errors.append(str(e))
+                                results_Y[i] = np.nan
+
+                        nan_count = np.sum(np.isnan(results_Y))
+                        if nan_count > n_sims * 0.5:
+                            st.markdown(f'<div class="err-box">❌ Công thức lỗi ({nan_count}/{n_sims} lần). Lỗi: {eval_errors[0] if eval_errors else "?"}<br>Kiểm tra lại tên biến và cú pháp.</div>', unsafe_allow_html=True)
+                        else:
+                            valid_Y = results_Y[~np.isnan(results_Y)]
+                            st.session_state["custom_results"] = {
+                                "Y": valid_Y,
+                                "sampled": sampled,
+                                "formula": output_formula,
+                                "label": output_label,
+                                "target": target_val,
+                                "rv_configs": rv_configs,
+                            }
+                            if nan_count > 0:
+                                st.markdown(f'<div class="warn-box">⚠️ {nan_count} lần lặp bị lỗi, bỏ qua. Dùng {len(valid_Y)} kết quả hợp lệ.</div>', unsafe_allow_html=True)
+                            else:
+                                st.markdown(f'<div class="success-box">✅ Mô phỏng hoàn tất — {len(valid_Y):,} iterations.</div>', unsafe_allow_html=True)
+
+                # ── Step 5: Display results ─────────────────────────────────
+                if "custom_results" in st.session_state:
+                    cr = st.session_state["custom_results"]
+                    Y       = cr["Y"]
+                    lbl     = cr["label"]
+                    tgt     = cr["target"]
+                    sampled = cr["sampled"]
+
+                    st.markdown('<div class="section-hdr"><span class="sec-num">⑤</span> KẾT QUẢ MÔ PHỎNG</div>', unsafe_allow_html=True)
+
+                    ss_c = summary_stats(Y, target=tgt)
+                    xbar_c, ci_lo_c, ci_hi_c = confidence_interval_mean(Y, alpha=1-ci_alpha)
+
+                    # Metrics row
+                    mc1, mc2, mc3, mc4, mc5 = st.columns(5)
+                    mc1.markdown(metric_html("Mean", f"{np.mean(Y):,.2f}"), unsafe_allow_html=True)
+                    mc2.markdown(metric_html("Std Dev", f"{np.std(Y):,.2f}", color=GOLD), unsafe_allow_html=True)
+                    mc3.markdown(metric_html("P10 / P90", f"{np.percentile(Y,10):,.2f} / {np.percentile(Y,90):,.2f}", color=TEAL), unsafe_allow_html=True)
+                    mc4.markdown(metric_html("P(Y ≤ Target)", f"{ss_c.get('P(Y ≤ Target)', 0):.1%}", color=BLUE), unsafe_allow_html=True)
+                    mc5.markdown(metric_html("P(Y > Target) [VaR]", f"{ss_c.get('P(Y > Target)', 0):.1%}", color=RED), unsafe_allow_html=True)
+
+                    st.markdown(f"""
+                    <div class="var-highlight">
+                    🎯 <b>Y = {cr['formula']}</b> &nbsp;|&nbsp;
+                    Target = <b>{tgt:,.2f}</b> →
+                    P(Y ≤ Target) = <b>{ss_c.get('P(Y ≤ Target)', 0):.2%}</b>,
+                    P(Y > Target) = <b style="color:{RED}">{ss_c.get('P(Y > Target)', 0):.2%}</b><br>
+                    CI {ci_alpha:.0%} cho Mean thực: [<b>{ci_lo_c:,.2f} — {ci_hi_c:,.2f}</b>]
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # Histogram + CDF
+                    fig_c = plot_histogram(Y, f"Phân phối đầu ra: {lbl}", lbl, target=tgt, color=TEAL)
+                    show_fig(fig_c)
+
+                    # Input distributions side by side
+                    st.markdown('<div class="section-hdr"><span class="sec-num">⑥</span> PHÂN PHỐI CÁC BIẾN ĐẦU VÀO</div>', unsafe_allow_html=True)
+                    rv_list = list(sampled.items())
+                    n_rv = len(rv_list)
+                    cols_rv = st.columns(min(n_rv, 3))
+                    for idx, (nm, smp) in enumerate(rv_list):
+                        with cols_rv[idx % 3]:
+                            fig_rv, ax_rv = new_fig(figsize=(4, 2.8))
+                            ax_rv.hist(smp, bins=40, color=PURPLE, alpha=0.75, density=True, edgecolor=DARK, linewidth=0.3)
+                            mu_rv, sig_rv = np.mean(smp), np.std(smp)
+                            xr_rv = np.linspace(mu_rv - 4*sig_rv, mu_rv + 4*sig_rv, 300)
+                            ax_rv.plot(xr_rv, stats.norm.pdf(xr_rv, mu_rv, sig_rv), color=GOLD, linewidth=1.2, linestyle="--")
+                            style_ax(ax_rv, f"{nm}", nm, "Density")
+                            fig_rv.tight_layout(pad=1)
+                            show_fig(fig_rv)
+
+                    # Sensitivity (Tornado) via correlation
+                    if len(sampled) >= 2:
+                        st.markdown('<div class="section-hdr"><span class="sec-num">⑦</span> PHÂN TÍCH ĐỘ NHẠY (CORRELATION)</div>', unsafe_allow_html=True)
+                        corr_vals = {}
+                        for nm, smp in sampled.items():
+                            if np.std(smp) > 0 and np.std(Y) > 0:
+                                corr_vals[nm] = float(np.corrcoef(smp, Y)[0, 1])
+                        sorted_corr = sorted(corr_vals.items(), key=lambda x: abs(x[1]), reverse=True)
+
+                        fig_t, ax_t = new_fig(figsize=(8, max(2.5, len(sorted_corr)*0.55 + 1)))
+                        ys_t = np.arange(len(sorted_corr))
+                        colors_t = [TEAL if v >= 0 else RED for _, v in sorted_corr]
+                        ax_t.barh(ys_t, [v for _, v in sorted_corr], color=colors_t, alpha=0.8, height=0.55)
+                        ax_t.set_yticks(ys_t)
+                        ax_t.set_yticklabels([n for n, _ in sorted_corr], color=WHITE, fontsize=9)
+                        ax_t.axvline(0, color=GRAY, linewidth=0.8)
+                        for i, (nm, v) in enumerate(sorted_corr):
+                            ax_t.text(v + (0.01 if v >= 0 else -0.01), i, f"{v:+.3f}",
+                                      va="center", ha="left" if v >= 0 else "right", color=WHITE, fontsize=8)
+                        style_ax(ax_t, f"Hệ số tương quan Pearson — Input vs {lbl}", "Correlation với Y", "")
+                        show_fig(fig_t)
+
+                    # Detail stats table
+                    with st.expander("📋 Bảng thống kê chi tiết"):
+                        ss_df = pd.DataFrame({
+                            "Chỉ số": list(ss_c.keys()),
+                            "Giá trị": [f"{v:,.4f}" if isinstance(v, float) else str(v) for v in ss_c.values()]
+                        })
+                        st.dataframe(ss_df, use_container_width=True, hide_index=True)
+
+                    # Export results
+                    with st.expander("💾 Xuất kết quả ra Excel"):
+                        out_df = pd.DataFrame({"Y_output": Y})
+                        for nm, smp in sampled.items():
+                            out_df[f"input_{nm}"] = smp[:len(Y)]
+                        out_buf = io.BytesIO()
+                        with pd.ExcelWriter(out_buf, engine="openpyxl") as writer:
+                            out_df.to_excel(writer, index=False, sheet_name="SimResults")
+                            ss_df.to_excel(writer, index=False, sheet_name="Summary")
+                        st.download_button(
+                            label="⬇️ Tải file kết quả (.xlsx)",
+                            data=out_buf.getvalue(),
+                            file_name="simulation_results.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+
+        except Exception as e:
+            st.markdown(f'<div class="err-box">❌ Không đọc được file Excel: {e}</div>', unsafe_allow_html=True)
+
+    else:
+        st.markdown("""
+        <div class="info-box">
+        📂 <b>Chưa có file nào được upload.</b><br><br>
+        File Excel cần có dạng bảng đơn giản:<br>
+        • Hàng đầu tiên = tên cột (header)<br>
+        • Các hàng tiếp theo = dữ liệu số<br>
+        • Ví dụ: cột <code>revenue</code>, <code>cost</code>, <code>quantity</code>, <code>price</code>…<br><br>
+        Sau khi upload, bạn sẽ chọn phân phối xác suất cho từng biến và nhập công thức
+        để tính chỉ số đầu ra (Y). App sẽ tự chạy Monte Carlo và hiện kết quả.
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Demo template download
+        demo_data = pd.DataFrame({
+            "revenue":  [1000, 1200, 950, 1100, 1300, 980, 1050, 1150, 1020, 1080],
+            "cost":     [600,  620,  580, 610,  650,  590, 605,  625,  595,  615],
+            "quantity": [500,  520,  480, 510,  540,  490, 505,  515,  495,  508],
+            "discount": [0.05, 0.08, 0.03, 0.06, 0.10, 0.04, 0.05, 0.07, 0.04, 0.06],
+        })
+        demo_buf = io.BytesIO()
+        with pd.ExcelWriter(demo_buf, engine="openpyxl") as writer:
+            demo_data.to_excel(writer, index=False, sheet_name="Data")
+        st.download_button(
+            label="📥 Tải file mẫu (demo_data.xlsx)",
+            data=demo_buf.getvalue(),
+            file_name="demo_simulation_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
 
 # ── Footer ─────────────────────────────────────────────────────────────────
 st.markdown("---")
