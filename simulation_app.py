@@ -34,8 +34,8 @@ PINK   = "#e85c8a"   # pink accent
 # PAGE CONFIG & CSS
 # ══════════════════════════════════════════════════════════════════════════════
 st.set_page_config(
-    page_title="🎲 Simulation Analyst",
-    page_icon="🎲",
+    page_title="📊 Simulation Analyst",
+    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -395,7 +395,7 @@ def plot_tornado(data_dict, title, output_label, n_sims=2000, seed=99):
 # ══════════════════════════════════════════════════════════════════════════════
 # HERO HEADER
 # ══════════════════════════════════════════════════════════════════════════════
-st.markdown('<div class="hero-title">🎲 Simulation Analyst</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-title">📊 Simulation Analyst</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="hero-sub">Monte Carlo Simulation theo phương pháp Analytic Solver (Chapter 12). '
     'Chọn bài toán từ sidebar → nhập tham số → chạy mô phỏng → đọc phân phối, VaR và khoảng tin cậy.</div>',
@@ -406,14 +406,14 @@ st.markdown(
 # SIDEBAR — navigation & shared settings
 # ══════════════════════════════════════════════════════════════════════════════
 MODULES = {
+    "📂 Upload Excel Files":         "custom",
     "📖 Lý thuyết & Hướng dẫn":    "theory",
     "🏥 Health Insurance":          "health",
     "✈️ Airline Overbooking":       "airline",
     "📦 Inventory Control (s,Q)":   "inventory",
-    "📂 Project Selection":         "project",
+    "🗂️ Project Selection":         "project",
     "📈 Portfolio Optimization":    "portfolio",
     "🎰 RNG Playground":            "rng",
-    "📁 Custom Simulation (Excel)": "custom",
 }
 
 with st.sidebar:
